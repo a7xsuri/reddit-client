@@ -1,24 +1,37 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 
-// const loadMenu = createAsyncThunk(
-//     'menu/menuLoading', async ()
-// )
+export const loadMenu = createAsyncThunk(
+    'menu/loadMenu', async (id) =>{
+        const response = await fetch('https://www.reddit.com/r/'+ id +'.json')
+        const json = await response.json();
+        console.log(json)
+        return json
+    }
+)
 
 const menuSlice = createSlice({
     name: 'menu',
     initialState: {
-        menu: {}
+        menu: {},
+        isLoading: false,
+        failed: false
     },
-    reducers: {
-        addMenu: (state, action ) =>{
-            state.menu[action.payload.display_name] = {
-                icon: action.payload.icon_img
-            }
-        }
+    extraReducers: (builder) => {
+        builder.addCase(loadMenu.pending, (state)=>{
+            state.isLoading = true;
+            state.failed = false;
+        }).addCase(loadMenu.fulfilled, (state, action) =>{
+            state.menu = {[action.payload.data.title]: action.payload.data.children}
+            state.isLoading = false;
+            state.failed = false
+        }).addCase(loadMenu.rejected, (state) =>{
+            state.isLoading = false;
+            state.failed = true;
+        })
     }
 })
 
-const selectMenu = (state) => state.menu.menu
+export const selectMenu = (state) => state.menu.menu
 
 export default menuSlice.reducer
